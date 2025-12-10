@@ -1,0 +1,6 @@
+src/config_local.py
+test.py
+raw_videos/
+mouth_rois/
+features/
+src/__pycache__/
