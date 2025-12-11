@@ -7,6 +7,7 @@ from config_local import RAW_DIR, SAVE_DIR
 
 os.makedirs(SAVE_DIR, exist_ok=True)
 
+#Face Mesh model that detects facial landmarks
 mp_face_mesh = mp.solutions.face_mesh.FaceMesh(
     static_image_mode=False,
     max_num_faces=1,
@@ -15,13 +16,16 @@ mp_face_mesh = mp.solutions.face_mesh.FaceMesh(
     min_tracking_confidence=0.5,
 )
 
-#MediaPipe lip landmark indices
+#MediaPipe lip landmark indices, concentrating on upper/lower lip
 LIPS = list(range(61, 91)) + list(range(146, 166))
 
+#Take a frame and lip landmakrs, and return an 88x88 grayscale mouth image for mobilenet use
 def extract_mouth_roi(frame, landmarks, size=88):
     h, w, _ = frame.shape
+    #Convert to pixel coordinates
     lip_points = np.array([[int(lm.x * w), int(lm.y * h)] for lm in landmarks])
 
+    #Include entire lip motion
     x1, y1 = np.min(lip_points, axis=0)
     x2, y2 = np.max(lip_points, axis=0)
 
@@ -31,13 +35,14 @@ def extract_mouth_roi(frame, landmarks, size=88):
     x2 = min(w, x2 + pad)
     y2 = min(h, y2 + pad)
 
+    #Crop mouth region and rescale it
     mouth = frame[y1:y2, x1:x2]
     mouth = cv2.resize(mouth, (size, size))
     mouth = cv2.cvtColor(mouth, cv2.COLOR_BGR2GRAY)
 
     return mouth
 
-
+#Process one video, extract the mouth ROI, and save as a .npz file
 def process_video(video_path):
     filename = os.path.basename(video_path).replace(".mp4", "")
     save_path = os.path.join(SAVE_DIR, filename + ".npz")
@@ -49,19 +54,22 @@ def process_video(video_path):
         ret, frame = cap.read()
         if not ret:
             break
-
+        
+        #Convert to RGB for use in mediapipe
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = mp_face_mesh.process(rgb)
 
+        #IF a face is present, extract mouth roi
         if results.multi_face_landmarks:
             landmarks = [results.multi_face_landmarks[0].landmark[i] for i in LIPS]
             mouth = extract_mouth_roi(frame, landmarks)
-            frames.append(mouth)
+            frames.append(mouth) #Do it for eveery frame (all 29)
 
     cap.release()
 
+    #Save ROIs
     if len(frames) > 0:
-        frames = np.stack(frames, axis=0)
+        frames = np.stack(frames, axis=0) #Output should be (29,88,88)
         np.savez(save_path, data=frames)
         print(f"Saved {save_path} with {frames.shape[0]} frames")
     else:
