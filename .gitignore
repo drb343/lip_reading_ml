@@ -4,3 +4,8 @@ raw_videos/
 mouth_rois/
 features/
 src/__pycache__/
+*.npz
+*.npy
+*.pt
+*.mp4
+*.txt
