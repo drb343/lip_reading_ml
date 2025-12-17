@@ -9,3 +9,11 @@ src/__pycache__/
 *.pt
 *.mp4
 *.txt
+best_tcn_model.pth
+checkpoint_epoch_5.pth
+checkpoint_epoch_10.pth
+checkpoint_epoch_15.pth
+checkpoint_epoch_20.pth
+.gitignore
+training_history.json
+.vscode/settings.json

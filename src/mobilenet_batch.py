@@ -5,10 +5,11 @@ from torchvision.models import mobilenet_v2
 import numpy as np
 import glob
 from config_local import ROI_DIR, SAVE_MOBILE_DIR
+from tqdm import tqdm
 
-#Only use a single thread for proof of concept with lightweight computation
-torch.set_num_threads(1)
-torch.set_num_interop_threads(1)
+# use GPU if available
+device = torch.device('cuda' if torch.cuda.is_aavailable() else 'cpu')
+print(f"Using device: {device}")
 
 os.makedirs(SAVE_MOBILE_DIR, exist_ok=True)
 
@@ -32,45 +33,56 @@ def load_mobilenet():
 
 
 model = load_mobilenet()
+model = model.to(device)
+
+# mixed precision for faster inference
+if device.type == 'cuda':
+    model = model.half()  # Use FP16 for 2x speedup
+    print("Mixed precision (FP16) enabled")
 
 
-#Process a single .npz mouth_roi file
+# process all frames of the vid at once
 def process_video(npz_path):
     filename = os.path.basename(npz_path).replace(".npz", "")
     save_path = os.path.join(SAVE_MOBILE_DIR, filename + ".pt")
 
     #Load (29, 88, 88) mouth ROI frames
-    data = np.load(npz_path)["data"]
-    T = data.shape[0]
+    data = np.load(npz_path)["data"] 
 
-    all_features = []
-
-    #Process the frames one by one ONLY, otherwise CPU will crash if all go to RAM
-    for i in range(T):
-        frame = data[i].astype(np.float32) / 255.0
-        frame = (frame - MEAN) / STD
-
-        #Shape should be  (1, 1, 88, 88)
-        tensor = torch.from_numpy(frame).unsqueeze(0).unsqueeze(0)
-
-        with torch.no_grad():
-            feat = model(tensor)   #Output shape: (1, 1280)
-
-        all_features.append(feat.cpu())
-
-    #Concatenate into (29, 1280)
-    features = torch.cat(all_features, dim=0)
-    torch.save(features, save_path)
-    print(f"Saved {save_path} — shape={tuple(features.shape)}")
+    #Normalize all frames at once
+    frames = data.astype(np.float32) / 255.0
+    frames = (frames - MEAN) / STD
+    
+    #Convert to tensor: (T, 1, 88, 88)
+    frames_tensor = torch.from_numpy(frames).unsqueeze(1).to(device)
+    
+    # use FP16 if model is in half precision
+    if device.type == 'cuda':
+        frames_tensor = frames_tensor.half()
+    
+    # process all frames at once
+    with torch.no_grad():
+        features = model(frames_tensor)  # (29, 1280)
+    
+    # save to disk
+    torch.save(features.cpu(), save_path)
+    return tuple(features.shape)
 
 
 if __name__ == "__main__":
     npz_files = glob.glob(os.path.join(ROI_DIR, "*.npz"))
 
     print(f"Found {len(npz_files)} ROI files.")
-
-    for i, npz_path in enumerate(npz_files):
-        print(f"[{i+1}/{len(npz_files)}] Processing: {npz_path}")
-        process_video(npz_path)
-
-    print("\nAll feature extraction complete!")
+    print(f"Device: {device}")
+    
+    # process with progress bar
+    for npz_path in tqdm(npz_files, desc="Extracting features"):
+        shape = process_video(npz_path)
+    
+    print(f"\nAll feature extraction complete! Processed {len(npz_files)} videos.")
+    print(f"Output shape per video: {shape}")
+    print(f"Saved to: {SAVE_MOBILE_DIR}")
+    
+    print(f"\nAll feature extraction complete! Processed {len(npz_files)} videos.")
+    print(f"Output shape per video: {shape}")
+    print(f"Saved to: {SAVE_MOBILE_DIR}")
