@@ -1,4 +1,4 @@
-#Efficient Lip Reading using MobileNetV2 + TCN
+# Efficient Lip Reading using MobileNetV2 + TCN
 
 ## Data
 Model was trained on Oxford BBC's Lip Reading in the Wild Dataset (LRW). https://www.robots.ox.ac.uk/~vgg/data/lip_reading/lrw1.html
