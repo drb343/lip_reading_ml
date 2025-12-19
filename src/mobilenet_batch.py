@@ -8,7 +8,7 @@ from config_local import ROI_DIR, SAVE_MOBILE_DIR
 from tqdm import tqdm
 
 # use GPU if available
-device = torch.device('cuda' if torch.cuda.is_aavailable() else 'cpu')
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 
 os.makedirs(SAVE_MOBILE_DIR, exist_ok=True)
