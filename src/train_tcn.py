@@ -230,10 +230,10 @@ if __name__ == "__main__":
     # if possible, resume training from last checkpoint
     start_epoch = 0
     best_val_acc = 0.0
-    if os.path.exists('best_tcn_model.pth'):
+    if os.path.exists('src/best_tcn_model.pth'):
         print("Loading checkpoint...")
         try:
-            checkpoint = torch.load('best_tcn_model.pth', map_location=device, weights_only=False)
+            checkpoint = torch.load('src/best_tcn_model.pth', map_location=device, weights_only=False)
             
             # Handle both full checkpoint and state_dict only formats
             if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
