@@ -17,3 +17,6 @@ Train and validate the TCN on the extracted MobileNet features, handle variable-
 
 ## analyze_model_performance.py
 Evaluated the trained TCN model on extracted features (using LRW test set). Compute Top-K accuracy and confusion matrix and visualize. 
+
+## best_tcn_model.pth
+Stored model weights, saved from our model with the highest validation accuracy.
