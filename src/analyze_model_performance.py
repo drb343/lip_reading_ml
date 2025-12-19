@@ -324,7 +324,7 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(script_dir)
     
-    MODEL_PATH = os.path.join(parent_dir, "checkpoint_epoch_30.pth")
+    MODEL_PATH = os.path.join(parent_dir, "src/best_tcn_model.pth")
     HISTORY_PATH = os.path.join(parent_dir, "history.json")
     VOCAB_PATH = os.path.join(script_dir, "words.txt")
     OUTPUT_DIR = os.path.join(parent_dir, "analysis_results")
